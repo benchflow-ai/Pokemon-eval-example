@@ -1,0 +1,62 @@
+Evaluating session: 4865faf6-9c1f-4b11-b0d5-078e242bcc43
+Loading data for session: 4865faf6-9c1f-4b11-b0d5-078e242bcc43
+Loaded 38 screenshots and 37 actions
+Time taken: 979.862672 seconds
+Model used: gpt-4o-mini
+Analyzing 17 checkpoints out of 38 total screenshots
+Analyzing checkpoint 1/17 (screenshot 1)
+Milestone detection result: NONE
+Analyzing checkpoint 2/17 (screenshot 3)
+Milestone detection result: NONE
+Analyzing checkpoint 3/17 (screenshot 5)
+Milestone detection result: NONE
+Analyzing checkpoint 4/17 (screenshot 7)
+Milestone detection result: NONE
+Analyzing checkpoint 5/17 (screenshot 9)
+Milestone detection result: NONE
+Analyzing checkpoint 6/17 (screenshot 11)
+Milestone detection result: NONE
+Analyzing checkpoint 7/17 (screenshot 13)
+Milestone detection result: NONE
+Analyzing checkpoint 8/17 (screenshot 15)
+Milestone detection result: NONE
+Analyzing checkpoint 9/17 (screenshot 17)
+Milestone detection result: NONE
+Analyzing checkpoint 10/17 (screenshot 19)
+Milestone detection result: NONE
+Analyzing checkpoint 11/17 (screenshot 21)
+Milestone detection result: NONE
+Analyzing checkpoint 12/17 (screenshot 26)
+Milestone detection result: Game Start
+New milestone detected: Game Start at step 26, time: 379.7 seconds
+Analyzing checkpoint 13/17 (screenshot 31)
+Milestone detection result: Game Start
+Analyzing checkpoint 14/17 (screenshot 36)
+Milestone detection result: Game Start
+Analyzing checkpoint 15/17 (screenshot 38)
+Milestone detection result: Game Start
+Skipping checkpoint 41 as it exceeds available screenshots (38)
+Skipping checkpoint 46 as it exceeds available screenshots (38)
+
+===== GAME EVALUATION SUMMARY =====
+Final milestone: Game Start
+Total steps: 38
+Time taken: 979.9 seconds
+Total score: 0
+
+Milestone achievements:
+- Game Start: Step 26, Time: 379.7s, Score: 0.8
+
+Action breakdown:
+keypress: 35, wait: 2
+
+Evaluation and 1 milestone achievements saved to database for session: 4865faf6-9c1f-4b11-b0d5-078e242bcc43
+
+===== EVALUATION SUMMARY =====
+Final milestone: Game Start
+Total steps: 38
+Score: 0
+Time taken: 979.9 seconds
+
+Milestone Achievements:
+- Game Start: Step 26, Time: 379.7s, Score: 0.8
