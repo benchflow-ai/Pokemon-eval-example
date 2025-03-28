@@ -1,7 +1,7 @@
 # /// script
 # dependencies = [
 # "morphcloud",
-# "openai",
+# "anthropic",
 # "sqlalchemy",
 # "psycopg2-binary"
 # ]
@@ -11,7 +11,7 @@ import os
 import time
 import json
 import base64
-import openai
+import anthropic
 import logging
 import re
 import uuid
@@ -30,14 +30,14 @@ logger = logging.getLogger("EmuAgent")
 
 class EmuAgent:
     """
-    A fully autonomous agent that uses GPT-4o to play games through
+    A fully autonomous agent that uses Claude to play games through
     the MorphComputer interface, automatically taking screenshots after each action.
     """
     
     def __init__(
         self, 
         api_key: Optional[str] = None,
-        model: str = "gpt-4o",
+        model: str = "claude-3-5-sonnet-20240620",
         max_tokens: int = 4096,
         temperature: float = 0.7,
         computer: Optional[MorphComputer] = None,
@@ -48,9 +48,9 @@ class EmuAgent:
         save_base64: bool = True,  # Parameter to save base64 strings
     ):
         """Initialize the EmuAgent."""
-        self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         if not self.api_key:
-            raise ValueError("OpenAI API key is required")
+            raise ValueError("Anthropic API key is required")
         
         self.model = model
         self.max_tokens = max_tokens
@@ -82,8 +82,8 @@ class EmuAgent:
         
         self.step_counter = 0
         
-        # Initialize OpenAI client
-        self.client = openai.OpenAI(api_key=self.api_key)
+        # Initialize Anthropic client
+        self.client = anthropic.Anthropic(api_key=self.api_key)
         
         # Initialize computer if needed
         self.computer = computer
@@ -158,11 +158,8 @@ As you play, explain your reasoning and strategy. Describe what you observe in t
         
     def init_conversation(self):
         """Initialize or reset the conversation history."""
-        # Initialize with system message for OpenAI
-        self.messages = [{
-            "role": "system",
-            "content": self.system_prompt
-        }]
+        # Initialize with empty message list (system prompt is passed separately)
+        self.messages = []
     
     def log(self, message: str):
         """Log a message if verbose mode is enabled."""
@@ -217,19 +214,33 @@ As you play, explain your reasoning and strategy. Describe what you observe in t
                     # If the last message was from the assistant, add the screenshot as a user message
                     self.messages.append({
                         "role": "user",
-                        "content": [
-                            {"type": "text", "text": "Screenshot result from your last action:"},
-                            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{screenshot_data}"}}
-                        ]
+                        "content": [{
+                            "type": "text",
+                            "text": "Screenshot result from your last action:"
+                        }, {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/png",
+                                "data": screenshot_data
+                            }
+                        }]
                     })
                 else:
                     # For the initial screenshot or if conversation flow needs correction
                     self.messages.append({
                         "role": "user",
-                        "content": [
-                            {"type": "text", "text": "Here's the current game state. What action will you take next?"},
-                            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{screenshot_data}"}}
-                        ]
+                        "content": [{
+                            "type": "text",
+                            "text": "Here's the current game state. What action will you take next?"
+                        }, {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/png",
+                                "data": screenshot_data
+                            }
+                        }]
                     })
                 self.log("Added screenshot to conversation")
                 
@@ -256,10 +267,10 @@ As you play, explain your reasoning and strategy. Describe what you observe in t
             if save_state_data:
                 message = {
                     "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Here's the emulator save state data (Core.bin in base64 format):"},
-                        {"type": "text", "text": save_state_data}
-                    ]
+                    "content": [{
+                        "type": "text",
+                        "text": "Here's the emulator save state data (Core.bin in base64 format): " + save_state_data
+                    }]
                 }
                 self.messages.append(message)
                 self.log("Added save state data to conversation")
@@ -362,13 +373,13 @@ As you play, explain your reasoning and strategy. Describe what you observe in t
         Start a fully autonomous gameplay session.
         
         Args:
-            initial_prompt: Initial instruction to GPT
+            initial_prompt: Initial instruction to Claude
             max_turns: Maximum number of turns to play
             max_no_action_turns: Maximum consecutive turns without actions before stopping
             include_save_states: Whether to include save state data with each turn
             
         Returns:
-            Final response from GPT
+            Final response from Claude
         """
         self.log(f"Starting autonomous gameplay with prompt: {initial_prompt}")
         
@@ -385,7 +396,7 @@ As you play, explain your reasoning and strategy. Describe what you observe in t
         if include_save_states:
             self.add_save_state_to_conversation()
         
-        # Get GPT's first response
+        # Get Claude's first response
         response = self.get_next_action()
         last_response = response
         
@@ -394,7 +405,7 @@ As you play, explain your reasoning and strategy. Describe what you observe in t
         for turn in range(max_turns):
             self.log(f"Turn {turn+1}/{max_turns}")
             
-            # Check if GPT wants to take an action
+            # Check if Claude wants to take an action
             action = self.extract_action(response)
             
             if not action:
@@ -406,7 +417,7 @@ As you play, explain your reasoning and strategy. Describe what you observe in t
                     self.log("Maximum no-action turns reached, ending gameplay")
                     break
                     
-                # Prompt GPT again for an action
+                # Prompt Claude again for an action
                 self.messages.append({
                     "role": "user", 
                     "content": "Please specify an action to take in the game using the ```action{...}``` format."
@@ -428,7 +439,7 @@ As you play, explain your reasoning and strategy. Describe what you observe in t
             if include_save_states:
                 self.add_save_state_to_conversation()
             
-            # Get GPT's next step
+            # Get Claude's next step
             response = self.get_next_action()
             last_response = response
         
@@ -439,20 +450,21 @@ As you play, explain your reasoning and strategy. Describe what you observe in t
         return last_response
     
     def get_next_action(self) -> str:
-        """Get GPT's next action based on the conversation so far."""
+        """Get Claude's next action based on the conversation so far."""
         try:
-            self.log("Getting next action from GPT...")
+            self.log("Getting next action from Claude...")
         
-            # Call OpenAI API
-            response = self.client.chat.completions.create(
+            # Call Anthropic API
+            response = self.client.messages.create(
                 model=self.model,
                 max_tokens=self.max_tokens,
                 temperature=self.temperature,
+                system=self.system_prompt,
                 messages=self.messages
             )
             
-            response_text = response.choices[0].message.content
-            self.log(f"GPT response: {response_text[:100]}...")
+            response_text = response.content[0].text
+            self.log(f"Claude response: {response_text[:100]}...")
             
             # Add to conversation history
             self.messages.append({"role": "assistant", "content": response_text})
@@ -460,11 +472,11 @@ As you play, explain your reasoning and strategy. Describe what you observe in t
             return response_text
 
         except Exception as e:
-            self.log(f"Error getting response from GPT: {e}")
+            self.log(f"Error getting response from Claude: {e}")
             return f"Error: {str(e)}"
     
     def extract_action(self, response: str) -> Optional[Dict[str, Any]]:
-        """Extract an action from GPT's response."""
+        """Extract an action from Claude's response."""
         # Look for action blocks
         action_match = re.search(r'```action\n(.*?)\n```', response, re.DOTALL)
         
@@ -503,7 +515,7 @@ if __name__ == "__main__":
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose logging')
     parser.add_argument('--save-states', action='store_true', help='Include save state data with each turn')
     parser.add_argument('--no-save-base64', action='store_true', help='Disable saving base64 string images')
-    parser.add_argument('--model', '-m', default='o3-mini-2025-01-31', help='OpenAI model to use (default: gpt-4o)')
+    parser.add_argument('--model', '-m', default='claude-3-5-sonnet-20240620', help='Claude model to use (default: claude-3-5-sonnet-20240620)')
     
     args = parser.parse_args()
     
