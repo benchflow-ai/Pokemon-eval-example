@@ -1,4 +1,4 @@
-# Morph Cloud Pokémon Emulator Agent
+# Agent Plays Pokémon Eval Harness
 
 This project demonstrates how to use Morph Cloud to create a fully autonomous agent that can play Pokémon games in a Game Boy emulator. Using Claude 3.7 Sonnet, the agent can see the game through screenshots, interpret the game state, and take actions by controlling the emulator.
 
